@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/indigowar/dmq/internal/core"
+	"github.com/lmittmann/tint"
 )
 
 func Example() {
 	initDir()
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(tint.NewHandler(os.Stdout, nil))
 
 	seg, err := NewSegment(logger, "/tmp/dmq/", 0)
 	if err != nil {
