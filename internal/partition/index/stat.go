@@ -5,21 +5,21 @@ import (
 	"os"
 )
 
-type SizeReq struct {
+type statRequest struct {
 	Filename string `json:"filename"`
 }
 
-type SizeRes struct {
+type Stat struct {
 	Size int64 `json:"size"`
 }
 
-func Size(ctx context.Context, request SizeReq) (SizeRes, error) {
+func stat(ctx context.Context, request statRequest) (Stat, error) {
 	stat, err := os.Stat(request.Filename)
 	if err != nil {
-		return SizeRes{}, err
+		return Stat{}, err
 	}
 
-	return SizeRes{
+	return Stat{
 		Size: stat.Size() / pairSize,
 	}, nil
 }

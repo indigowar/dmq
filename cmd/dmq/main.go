@@ -1,6 +1,34 @@
 package main
 
+import (
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/indigowar/dmq/internal/core/record"
+	"github.com/indigowar/dmq/internal/partition/log"
+)
+
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	l := log.InitLog(ctx, 4)
+
+	file, pos, err := l.WriteNew(context.Background(), "/tmp/dmq", "log", record.Record{
+		Offset:    0,
+		Timestamp: time.Now(),
+		Key:       []byte{},
+		Value:     []byte("Hello, world, how are you"),
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("file: %d, pos: %d", file, pos)
 }
 
 // var (

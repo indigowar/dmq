@@ -6,19 +6,19 @@ import (
 	"os"
 )
 
-type FindReq struct {
+type findRequest struct {
 	Filename string `json:"filename"`
 	Key      int64  `json:"key"`
 }
 
-type FindRes struct {
+type findResponse struct {
 	Value int64 `json:"value"`
 }
 
-func Find(ctx context.Context, request FindReq) (FindRes, error) {
+func find(ctx context.Context, request findRequest) (findResponse, error) {
 	file, err := os.OpenFile(request.Filename, os.O_RDONLY, 0644)
 	if err != nil {
-		return FindRes{}, err
+		return findResponse{}, err
 	}
 	defer file.Close()
 
@@ -26,16 +26,16 @@ func Find(ctx context.Context, request FindReq) (FindRes, error) {
 	buffer := make([]byte, pairSize)
 	for {
 		if _, err := file.ReadAt(buffer, position); err != nil {
-			return FindRes{}, err
+			return findResponse{}, err
 		}
 
 		var pair Pair
 		if _, err := binary.Decode(buffer, binary.NativeEndian, &pair); err != nil {
-			return FindRes{}, err
+			return findResponse{}, err
 		}
 
 		if pair.Key == request.Key {
-			return FindRes{Value: pair.Value}, nil
+			return findResponse{Value: pair.Value}, nil
 		}
 	}
 }

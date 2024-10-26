@@ -7,31 +7,29 @@ import (
 	"os"
 )
 
-type LatestReq struct {
+type latestRequest struct {
 	Filename string `json:"filename"`
 }
 
-type LatestRes = Pair
-
-func Latest(ctx context.Context, request LatestReq) (LatestRes, error) {
+func latest(ctx context.Context, request latestRequest) (Pair, error) {
 	file, err := os.OpenFile(request.Filename, os.O_RDONLY, 0644)
 	if err != nil {
-		return LatestRes{}, err
+		return Pair{}, err
 	}
 	defer file.Close()
 
-	if _, err := file.Seek(io.SeekEnd, pairSize); err != nil {
-		return LatestRes{}, err
+	if _, err := file.Seek(pairSize, io.SeekEnd); err != nil {
+		return Pair{}, err
 	}
 
 	buffer := make([]byte, pairSize)
 	if _, err := file.Read(buffer); err != nil {
-		return LatestRes{}, err
+		return Pair{}, err
 	}
 
-	var response LatestRes
+	var response Pair
 	if _, err := binary.Decode(buffer, binary.NativeEndian, &response); err != nil {
-		return LatestRes{}, err
+		return Pair{}, err
 	}
 
 	return response, nil
