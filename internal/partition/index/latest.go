@@ -1,6 +1,7 @@
 package index
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"io"
@@ -28,7 +29,9 @@ func latest(ctx context.Context, request latestRequest) (Pair, error) {
 	}
 
 	var response Pair
-	if _, err := binary.Decode(buffer, binary.NativeEndian, &response); err != nil {
+
+	reader := bytes.NewReader(buffer)
+	if err := binary.Read(reader, binary.NativeEndian, &response); err != nil {
 		return Pair{}, err
 	}
 

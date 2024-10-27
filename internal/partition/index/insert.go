@@ -12,18 +12,13 @@ type insertRequest struct {
 }
 
 func Insert(ctx context.Context, request insertRequest) (noResponse, error) {
-	buffer := make([]byte, pairSize)
-	if _, err := binary.Encode(buffer, binary.NativeEndian, request.Data); err != nil {
-		return noResponse{}, err
-	}
-
 	file, err := os.OpenFile(request.Filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return noResponse{}, err
 	}
 	defer file.Close()
 
-	if _, err := file.Write(buffer); err != nil {
+	if err := binary.Write(file, binary.NativeEndian, request.Data); err != nil {
 		return noResponse{}, err
 	}
 

@@ -1,6 +1,7 @@
 package index
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"os"
@@ -30,7 +31,8 @@ func find(ctx context.Context, request findRequest) (findResponse, error) {
 		}
 
 		var pair Pair
-		if _, err := binary.Decode(buffer, binary.NativeEndian, &pair); err != nil {
+		reader := bytes.NewReader(buffer)
+		if err := binary.Read(reader, binary.NativeEndian, &pair); err != nil {
 			return findResponse{}, err
 		}
 

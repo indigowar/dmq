@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -30,12 +31,12 @@ func read(ctx context.Context, request readRequest) (readResponse, error) {
 	}
 
 	var header int64
-	if _, err := binary.Decode(headerBuf, binary.NativeEndian, &header); err != nil {
+	if err := binary.Read(bytes.NewReader(headerBuf), endian, &header); err != nil {
 		return readResponse{}, err
 	}
 
 	recordBuffer := make([]byte, header)
-	if _, err := file.ReadAt(recordBuffer, request.Position+16); err != nil {
+	if _, err := file.ReadAt(recordBuffer, request.Position+8); err != nil {
 		return readResponse{}, err
 	}
 

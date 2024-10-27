@@ -117,12 +117,10 @@ func encodeRecord(r record.Record) ([]byte, error) {
 
 	var buf bytes.Buffer
 
-	header := make([]byte, 8)
-	if _, err := binary.Encode(header, binary.NativeEndian, int64(len(record))); err != nil {
+	if err := binary.Write(&buf, binary.LittleEndian, int64(len(record))); err != nil {
 		return nil, err
 	}
 
-	buf.Write(header)
 	buf.Write(record)
 
 	return buf.Bytes(), nil
