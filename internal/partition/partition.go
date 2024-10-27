@@ -50,19 +50,25 @@ func (p *partition) Write(ctx context.Context, payload record.RecordCreationPayl
 		Key:       payload.Key,
 		Value:     payload.Value,
 	}
+
+	p.logger.Info("creating a new record", "partition", p.Number, "offset", record.Offset, "timestamp", record.Timestamp)
+
 	p.NextOffset++
 
 	if len(p.Logs) == 0 {
+		p.logger.Info("creating a new log", "reason", "partition is empty")
 		return record.Offset, record.Timestamp, p.writeNew(ctx, record)
 	}
 
 	number := p.Logs[len(p.Logs)-1]
 	stat, err := p.index.Stat(ctx, p.offsetIndexPath(number))
 	if err != nil {
+		p.logger.Error("failed to get index's stat", "log", number, "err", err)
 		return 0, time.Time{}, err
 	}
 
 	if stat.Size == p.LogSize {
+		p.logger.Info("creating a new log", "reason", "last log is full")
 		return record.Offset, record.Timestamp, p.writeNew(ctx, record)
 	}
 
@@ -72,6 +78,7 @@ func (p *partition) Write(ctx context.Context, payload record.RecordCreationPayl
 func (p *partition) writeNew(ctx context.Context, record record.Record) error {
 	log, physicalPosition, err := p.log.WriteNew(ctx, p.path, logExt, record)
 	if err != nil {
+		p.logger.Error("failed to write into a new log", "err", err)
 		return err
 	}
 
@@ -81,6 +88,7 @@ func (p *partition) writeNew(ctx context.Context, record record.Record) error {
 		Key:   record.Timestamp.UnixNano(),
 		Value: record.Offset,
 	}); err != nil {
+		p.logger.Error("failed to write into an index", "log", log, "err", err)
 		return err
 	}
 
@@ -88,6 +96,7 @@ func (p *partition) writeNew(ctx context.Context, record record.Record) error {
 		Key:   record.Offset,
 		Value: physicalPosition,
 	}); err != nil {
+		p.logger.Error("failed to write into an index", "log", log, "err", err)
 		return err
 	}
 
@@ -97,6 +106,7 @@ func (p *partition) writeNew(ctx context.Context, record record.Record) error {
 func (p *partition) write(ctx context.Context, record record.Record, log int64) error {
 	physicalPosition, err := p.log.Write(ctx, p.logPath(log), record)
 	if err != nil {
+		p.logger.Error("failed to write into a log", "log", log, "err", err)
 		return err
 	}
 
@@ -104,6 +114,7 @@ func (p *partition) write(ctx context.Context, record record.Record, log int64) 
 		Key:   record.Timestamp.UnixNano(),
 		Value: record.Offset,
 	}); err != nil {
+		p.logger.Error("failed to write into an index", "log", log, "err", err)
 		return err
 	}
 
@@ -111,6 +122,7 @@ func (p *partition) write(ctx context.Context, record record.Record, log int64) 
 		Key:   record.Offset,
 		Value: physicalPosition,
 	}); err != nil {
+		p.logger.Error("failed to write into an index", "log", log, "err", err)
 		return err
 	}
 
@@ -128,11 +140,13 @@ func (p *partition) ReadByOffset(ctx context.Context, offset int64) (record.Reco
 				continue
 			}
 
+			p.logger.Error("search in index failed", "log", log, "searched by", offset, "err", err)
 			return record.Record{}, err
 		}
 
 		r, err := p.log.Read(ctx, p.logPath(log), pos)
 		if err != nil {
+			p.logger.Error("reading a log failed", "log", log, "searched by", pos, "err", err)
 			return record.Record{}, err
 		}
 
@@ -153,16 +167,19 @@ func (p *partition) ReadByTimestamp(ctx context.Context, timestamp time.Time) (r
 				continue
 			}
 
+			p.logger.Error("search in index failed", "log", log, "searched by", timestamp.UnixNano(), "err", err)
 			return record.Record{}, err
 		}
 
 		pos, err := p.index.Find(ctx, p.offsetIndexPath(log), offset)
 		if err != nil {
+			p.logger.Error("search in index failed", "log", log, "searched by", offset, "err", err)
 			return record.Record{}, err
 		}
 
 		r, err := p.log.Read(ctx, p.logPath(log), pos)
 		if err != nil {
+			p.logger.Error("reading a log failed", "log", log, "searched by", pos, "err", err)
 			return record.Record{}, err
 		}
 
